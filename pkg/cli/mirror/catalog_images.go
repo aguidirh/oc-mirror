@@ -84,7 +84,15 @@ func (o *MirrorOptions) rebuildCatalogs(ctx context.Context, dstDir string) (ima
 			}
 			ctlgRef := image.TypedImage{}
 			ctlgRef.Type = imagesource.DestinationRegistry
-			sourceRef, err := image.ParseReference(img)
+
+			var sourceRef image.TypedImageReference
+			_, err := os.Stat(slashPath + "/layout/oci-layout")
+			if err != nil && os.IsNotExist(err) {
+				sourceRef, err = image.ParseReference(img)
+			} else {
+				sourceRef, err = image.ParseReference("oci:///" + img)
+			}
+
 			if err != nil {
 				return fmt.Errorf("error parsing index dir path %q as image %q: %v", fpath, img, err)
 			}

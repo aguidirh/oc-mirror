@@ -130,7 +130,7 @@ func getManifest(ctx context.Context, imgPath string) (manifest.Manifest, error)
 		}
 	}()
 	if err != nil {
-		return nil, fmt.Errorf("unable to create ImageSource for %s: %v", err, imgPath)
+		return nil, fmt.Errorf("unable to create ImageSource for %s: %v", err, imgPath) //TODO ALEX there is a failure here, needs to check
 	}
 	manifestBlob, manifestType, err := imgsrc.GetManifest(ctx, nil)
 	if err != nil {

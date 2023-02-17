@@ -290,6 +290,7 @@ func (o *MirrorOptions) Run(cmd *cobra.Command, f kcmdutil.Factory) (err error) 
 
 	cleanup := func() error {
 		if !o.SkipCleanup {
+			os.RemoveAll("olm_artifacts")
 			return os.RemoveAll(filepath.Join(o.Dir, config.SourceDir))
 		}
 		return nil
@@ -758,7 +759,7 @@ func (o *MirrorOptions) mirrorToMirrorWrapper(ctx context.Context, cfg v1alpha2.
 			return err
 		}
 	}
-	return nil
+	return cleanup()
 }
 
 // mirrorToDiskWrapper

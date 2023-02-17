@@ -182,7 +182,6 @@ func (o *OperatorOptions) renderDCFull(ctx context.Context, reg *containerdregis
 		// check for the valid config label to use
 		configsLabel, err := o.GetCatalogConfigPath(ctx, operatorCatalog)
 		if err != nil {
-
 			return nil, ic, fmt.Errorf("unable to retrieve configs layer for image %s:\n%v\nMake sure this catalog is in OCI format", ctlg.Catalog, err)
 		}
 		// initialize path starting with <current working directory>/olm_artifacts/<repo>
@@ -479,11 +478,21 @@ func (o *OperatorOptions) plan(ctx context.Context, dc *declcfg.DeclarativeConfi
 
 	// Remove the catalog image from mappings we are going to transfer this
 	// using an OCI layout.
-	ctlgImg, err := image.ParseTypedImage(ctlgRef.Ref.Exact(), v1alpha2.TypeOperatorBundle)
-	if err != nil {
-		return nil, err
+	var ctlgImg image.TypedImage
+	if ctlgRef.Type == "oci" {
+		ctlgImg, err = image.ParseTypedImage(ctlgRef.OCIFBCPath, v1alpha2.TypeOperatorBundle)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		ctlgImg, err = image.ParseTypedImage(ctlgRef.Ref.Exact(), v1alpha2.TypeOperatorBundle)
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	mappings.Remove(ctlgImg)
+
 	// Write catalog OCI layout file to src so it is included in the archive
 	// at a path unique to the image.
 	if ctlgRef.Type != image.DestinationOCI {

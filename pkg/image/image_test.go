@@ -13,7 +13,7 @@ func TestParseReference(t *testing.T) {
 	type spec struct {
 		desc      string
 		inRef     string
-		expImgRef imagesource.TypedImageReference
+		expImgRef TypedImageReference
 		err       string
 	}
 
@@ -21,7 +21,7 @@ func TestParseReference(t *testing.T) {
 		{
 			desc:  "remote catalog OK",
 			inRef: "registry.redhat.io/redhat/redhat-operator-index:v4.11",
-			expImgRef: imagesource.TypedImageReference{
+			expImgRef: TypedImageReference{
 				Type: imagesource.DestinationRegistry,
 				Ref: reference.DockerImageReference{
 					Registry:  "registry.redhat.io",
@@ -35,7 +35,7 @@ func TestParseReference(t *testing.T) {
 		{
 			desc:  "local file catalog OK",
 			inRef: "file:///home/user/catalogs/redhat-operator-index:v4.11",
-			expImgRef: imagesource.TypedImageReference{
+			expImgRef: TypedImageReference{
 				Type: imagesource.DestinationFile,
 				Ref: reference.DockerImageReference{
 					Registry:  "home/user",
@@ -49,8 +49,9 @@ func TestParseReference(t *testing.T) {
 		{
 			desc:  "oci local catalog OK",
 			inRef: "oci:///home/user/catalogs/redhat-operator-index:v4.11",
-			expImgRef: imagesource.TypedImageReference{
-				Type: DestinationOCI,
+			expImgRef: TypedImageReference{
+				OCIFBCPath: "oci:///home/user/catalogs/redhat-operator-index:v4.11",
+				Type:       DestinationOCI,
 				Ref: reference.DockerImageReference{
 					Registry:  "home/user",
 					Namespace: "catalogs",
