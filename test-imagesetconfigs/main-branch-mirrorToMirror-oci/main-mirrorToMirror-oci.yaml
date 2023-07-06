@@ -1,0 +1,10 @@
+kind: ImageSetConfiguration
+apiVersion: mirror.openshift.io/v1alpha2
+
+mirror:
+  operators:
+  - catalog: oci:///home/aguidi/dev/catalogs/oci-rhoc-4.13
+    packages:
+    - name: node-observability-operator
+
+#command: ./bin/oc-mirror -c ./test-imagesetconfigs/main-branch-mirrorToMirror-oci/main-mirrorToMirror-oci.yaml docker://localhost:5000 --dest-use-http --dest-skip-tls --include-local-oci-catalogs

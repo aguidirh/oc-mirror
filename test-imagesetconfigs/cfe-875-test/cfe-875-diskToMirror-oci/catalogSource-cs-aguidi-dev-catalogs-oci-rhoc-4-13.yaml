@@ -1,0 +1,8 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: cs-aguidi-dev-catalogs-oci-rhoc-4-13
+  namespace: openshift-marketplace
+spec:
+  image: localhost:5000/home/aguidi/dev/catalogs/oci-rhoc-4.13:15fb64
+  sourceType: grpc

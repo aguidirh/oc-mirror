@@ -1,0 +1,10 @@
+kind: ImageSetConfiguration
+apiVersion: mirror.openshift.io/v1alpha2
+
+mirror:
+  operators:
+  - catalog: registry.redhat.io/redhat/redhat-operator-index:v4.13
+    packages:
+    - name: node-observability-operator
+
+#command: ./bin/oc-mirror -c ./test-imagesetconfigs/cfe-875-test/cfe-875-mirrorToMirror-non-oci.yaml docker://localhost:5000 --dest-use-http --dest-skip-tls

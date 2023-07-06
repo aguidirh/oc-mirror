@@ -1,0 +1,5 @@
+home/aguidi/dev/catalogs/oci-rhoc-4.13@sha256:15fb64e3b5494dfad5166bb80597bcc3ed1b9371ac0420ad44a9cbfd84b7fb1d=localhost:5000/home/aguidi/dev/catalogs/oci-rhoc-4.13:15fb64
+registry.redhat.io/noo/node-observability-agent-rhel8@sha256:a8e60d9f63e2ed0cf1e27309aac54014e3f1efc947b51ca0a99376338d220875=localhost:5000/noo/node-observability-agent-rhel8:a8e60d
+registry.redhat.io/openshift4/ose-kube-rbac-proxy@sha256:e3dad360d0351237a16593ca0862652809c41a2127c2f98b9e0a559568efbd10=localhost:5000/openshift4/ose-kube-rbac-proxy:e3dad3
+registry.redhat.io/noo/node-observability-operator-bundle-rhel8@sha256:0fbbb0b32adadc5746251103d25bba6bd365b2ff60e289e4694061fc92c3ce6e=localhost:5000/noo/node-observability-operator-bundle-rhel8:0fbbb0
+registry.redhat.io/noo/node-observability-rhel8-operator@sha256:53ba77f648154ac8aca1ae6c83815078dfde211dba1e42f597e69844e4954c01=localhost:5000/noo/node-observability-rhel8-operator:53ba77

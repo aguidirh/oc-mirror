@@ -1,0 +1,10 @@
+kind: ImageSetConfiguration
+apiVersion: mirror.openshift.io/v1alpha2
+storageConfig:
+  local:
+    path: /tmp/localstorage
+mirror:
+  operators:
+  - catalog: icr.io/cpopen/ibm-zcon-zosconnect-catalog@sha256:6f02ecef46020bcd21bdd24a01f435023d5fc3943972ef0d9769d5276e178e76
+
+#command: ./bin/oc-mirror -c ./test-imagesetconfigs/cfe-875-multi-arch-IBM/mirrorToMirror-fat-manifest.yaml --dest-skip-tls --dest-use-http docker://localhost:5000

@@ -1,0 +1,4 @@
+registry.redhat.io/openshift4/ose-kube-rbac-proxy@sha256:ac54cb8ff880a935ea3b4b1efc96d35bbf973342c450400d6417d06e59050027=localhost:5000/openshift4/ose-kube-rbac-proxy:ac54cb
+icr.io/cpopen/ibm-zcon-zosconnect-operator-bundle@sha256:be07ce128c9f232c91273ddde94de59668644ba7b7413891b4994309a7a18dee=localhost:5000/cpopen/ibm-zcon-zosconnect-operator-bundle:be07ce
+icr.io/cpopen/ibm-zcon-zosconnect-operator@sha256:b227736a7d44dd1c332edba9e575608cf38fa76df4dd3ad2bf7dc1ee6d66b06c=localhost:5000/cpopen/ibm-zcon-zosconnect-operator:b22773
+home/aguidi/dev/catalogs/ibm-multiarch@sha256:6f02ecef46020bcd21bdd24a01f435023d5fc3943972ef0d9769d5276e178e76=localhost:5000/home/aguidi/dev/catalogs/ibm-multiarch:6f02ec

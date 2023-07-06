@@ -1,0 +1,68 @@
+[aguidi@fedora oc-mirror]$ curl -X GET http://localhost:5000/v2/_catalog | jq
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100   184  100   184    0     0  39074      0 --:--:-- --:--:-- --:--:-- 46000
+{
+  "repositories": [
+    "cpopen/ibm-zcon-zosconnect-catalog",
+    "cpopen/ibm-zcon-zosconnect-operator",
+    "cpopen/ibm-zcon-zosconnect-operator-bundle",
+    "oc-mirror",
+    "openshift4/ose-kube-rbac-proxy"
+  ]
+}
+
+[aguidi@fedora oc-mirror]$ curl -k http://localhost:5000/v2/cpopen/ibm-zcon-zosconnect-catalog/tags/list | jq
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100    64  100    64    0     0  33368      0 --:--:-- --:--:-- --:--:-- 64000
+{
+  "name": "cpopen/ibm-zcon-zosconnect-catalog",
+  "tags": [
+    "6f02ec"
+  ]
+}
+
+[aguidi@fedora oc-mirror]$ curl -k http://localhost:5000/v2/cpopen/ibm-zcon-zosconnect-operator/tags/list | jq
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100    67  100    67    0     0  27858      0 --:--:-- --:--:-- --:--:-- 33500
+{
+  "name": "cpopen/ibm-zcon-zosconnect-operator",
+  "tags": [
+    "ac657be2"
+  ]
+}
+
+[aguidi@fedora oc-mirror]$ curl -k http://localhost:5000/v2/cpopen/ibm-zcon-zosconnect-operator-bundle/tags/list | jq
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100    74  100    74    0     0  38743      0 --:--:-- --:--:-- --:--:-- 74000
+{
+  "name": "cpopen/ibm-zcon-zosconnect-operator-bundle",
+  "tags": [
+    "f69534c2"
+  ]
+}
+
+[aguidi@fedora oc-mirror]$ curl -k http://localhost:5000/v2/oc-mirror/tags/list | jq
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100    69  100    69    0     0  25698      0 --:--:-- --:--:-- --:--:-- 34500
+{
+  "name": "oc-mirror",
+  "tags": [
+    "bca34cc3-dfa2-4843-be91-3b701df0733b"
+  ]
+}
+
+[aguidi@fedora oc-mirror]$ curl -k http://localhost:5000/v2/openshift4/ose-kube-rbac-proxy/tags/list | jq
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100    62  100    62    0     0  24332      0 --:--:-- --:--:-- --:--:-- 31000
+{
+  "name": "openshift4/ose-kube-rbac-proxy",
+  "tags": [
+    "5e70b9c2"
+  ]
+}

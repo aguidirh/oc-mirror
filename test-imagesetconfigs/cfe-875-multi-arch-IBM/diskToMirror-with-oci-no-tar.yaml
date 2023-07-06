@@ -1,0 +1,11 @@
+kind: ImageSetConfiguration
+apiVersion: mirror.openshift.io/v1alpha2
+storageConfig:
+  local:
+    path: /tmp/localstorage
+mirror:
+  operators:
+  - catalog: oci:///home/aguidi/dev/catalogs/ibm-multiarch
+
+# command: skopeo copy --all --format v2s2 docker://icr.io/cpopen/ibm-zcon-zosconnect-catalog@sha256:6f02ecef46020bcd21bdd24a01f435023d5fc3943972ef0d9769d5276e178e76 oci:///home/aguidi/dev/catalogs/ibm-multiarch
+# command: ./bin/oc-mirror -c "./test-imagesetconfigs/cfe-875-multi-arch-IBM/diskToMirror-with-oci-no-tar.yaml" --oci-insecure-signature-policy --dest-use-http --dest-skip-tls docker://localhost:5000

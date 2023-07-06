@@ -1,0 +1,1 @@
+#command: ./bin/oc-mirror --from ./test-imagesetconfigs/cfe-875-test/cfe-875-mirrorToDisk-non-oci docker://localhost:5000 --dest-use-http --dest-skip-tls

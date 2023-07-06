@@ -1,0 +1,1 @@
+# command: ./bin/oc-mirror --from ./test-imagesetconfigs/cfe-875-multi-arch-IBM/mirroToDisk-oci-on-isc/ --dest-use-http --dest-skip-tls docker://localhost:5000

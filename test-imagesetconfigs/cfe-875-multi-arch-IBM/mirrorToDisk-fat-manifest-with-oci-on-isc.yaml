@@ -1,0 +1,10 @@
+kind: ImageSetConfiguration
+apiVersion: mirror.openshift.io/v1alpha2
+storageConfig:
+  local:
+    path: /tmp/localstorage
+mirror:
+  operators:
+  - catalog: oci:///home/aguidi/dev/catalogs/ibm-multiarch
+
+#command: ./bin/oc-mirror -c ./test-imagesetconfigs/cfe-875-multi-arch-IBM/mirrorToDisk-fat-manifest-with-oci-on-isc.yaml file://mirroToDisk-oci-on-isc

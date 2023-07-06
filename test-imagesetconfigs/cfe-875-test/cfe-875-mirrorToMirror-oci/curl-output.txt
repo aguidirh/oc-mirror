@@ -1,0 +1,71 @@
+[aguidi@fedora oc-mirror]$ curl -X GET http://localhost:5000/v2/_catalog | jq
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100   217  100   217    0     0  53369      0 --:--:-- --:--:-- --:--:-- 54250
+{
+  "repositories": [
+    "home/aguidi/dev/catalogs/oci-rhoc-4.13",
+    "noo/node-observability-agent-rhel8",
+    "noo/node-observability-operator-bundle-rhel8",
+    "noo/node-observability-rhel8-operator",
+    "openshift4/ose-kube-rbac-proxy"
+  ]
+}
+
+[aguidi@fedora oc-mirror]$ curl -k http://localhost:5000/v2/home/aguidi/dev/catalogs/oci-rhoc-4.13/tags/list 
+| jq
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100    68  100    68    0     0  20968      0 --:--:-- --:--:-- --:--:-- 22666
+{
+  "name": "home/aguidi/dev/catalogs/oci-rhoc-4.13",
+  "tags": [
+    "15fb64"
+  ]
+}
+
+[aguidi@fedora oc-mirror]$ curl -k http://localhost:5000/v2/noo/node-observability-agent-rhel8/tags/list | jq
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100    64  100    64    0     0  13562      0 --:--:-- --:--:-- --:--:-- 16000
+{
+  "name": "noo/node-observability-agent-rhel8",
+  "tags": [
+    "a8e60d"
+  ]
+}
+
+[aguidi@fedora oc-mirror]$ curl -k http://localhost:5000/v2/noo/node-observability-operator-bundle-rhel8/tags
+/list | jq
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100    74  100    74    0     0  43274      0 --:--:-- --:--:-- --:--:-- 74000
+{
+  "name": "noo/node-observability-operator-bundle-rhel8",
+  "tags": [
+    "0fbbb0"
+  ]
+}
+
+[aguidi@fedora oc-mirror]$ curl -k http://localhost:5000/v2/noo/node-observability-rhel8-operator/tags/list |
+ jq
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100    67  100    67    0     0  35619      0 --:--:-- --:--:-- --:--:-- 67000
+{
+  "name": "noo/node-observability-rhel8-operator",
+  "tags": [
+    "53ba77"
+  ]
+}
+
+[aguidi@fedora oc-mirror]$ curl -k http://localhost:5000/v2/openshift4/ose-kube-rbac-proxy/tags/list | jq
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100    60  100    60    0     0  11571      0 --:--:-- --:--:-- --:--:-- 12000
+{
+  "name": "openshift4/ose-kube-rbac-proxy",
+  "tags": [
+    "e3dad3"
+  ]
+}
