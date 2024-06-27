@@ -14,6 +14,7 @@ const (
 	cacheEnvVar             string = "OC_MIRROR_CACHE"
 	additionalImages        string = "additional-images"
 	releaseImageExtractDir  string = "hold-release"
+	cincinnatiGraphDataDir  string = "cincinnati-graph-data"
 	operatorImageExtractDir string = "hold-operator"
 	signaturesDir           string = "signatures"
 	registryLogFilename     string = "registry.log"
@@ -21,7 +22,5 @@ const (
 	dryRunOutDir            string = "dry-run"
 	mappingFile             string = "mapping.txt"
 	missingImgsFile         string = "missing.txt"
-	infoDir                 string = "info"
 	clusterResourcesDir     string = "cluster-resources"
-	modeFile                string = "mode.txt"
 )

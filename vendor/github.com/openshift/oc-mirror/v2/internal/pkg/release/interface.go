@@ -23,7 +23,7 @@ type CollectorInterface interface {
 	// of the image, rather than the exact digest or tag.
 	// This works because oc-mirror doesn't know how to mix OKD and OCP
 	// release mirroring.
-	ReleaseImage() (string, error)
+	ReleaseImage(context.Context) (string, error)
 }
 
 type GraphBuilderInterface interface {
