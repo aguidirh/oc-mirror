@@ -106,6 +106,8 @@ func (o *Mirror) copy(ctx context.Context, src, dest string, opts *CopyOptions) 
 		sourceCtx.DockerInsecureSkipTLSVerify = types.OptionalBoolTrue
 	}
 
+	fmt.Printf("copy src DockerDaemonInsecureSkipTLSVerify %v DockerInsecureSkipTLSVerify %v\n", sourceCtx.DockerDaemonInsecureSkipTLSVerify, sourceCtx.DockerInsecureSkipTLSVerify) //TODO ALEX REMOVE ME
+
 	destinationCtx, err := opts.DestImage.NewSystemContext()
 	if err != nil {
 		return err
@@ -114,6 +116,8 @@ func (o *Mirror) copy(ctx context.Context, src, dest string, opts *CopyOptions) 
 	if strings.Contains(dest, opts.LocalStorageFQDN) { // when copying to cache, use HTTP
 		destinationCtx.DockerInsecureSkipTLSVerify = types.OptionalBoolTrue
 	}
+
+	fmt.Printf("copy dest DockerDaemonInsecureSkipTLSVerify %v DockerInsecureSkipTLSVerify %v\n", destinationCtx.DockerDaemonInsecureSkipTLSVerify, destinationCtx.DockerInsecureSkipTLSVerify) //TODO ALEX REMOVE ME
 
 	var manifestType string
 	if len(opts.Format) > 0 {
@@ -276,6 +280,8 @@ func (o *Mirror) delete(ctx context.Context, image string, opts *CopyOptions) er
 	if strings.Contains(image, opts.LocalStorageFQDN) { // when copying to cache, use HTTP
 		sysCtx.DockerInsecureSkipTLSVerify = types.OptionalBoolTrue
 	}
+
+	fmt.Printf("delete dest DockerDaemonInsecureSkipTLSVerify %v DockerInsecureSkipTLSVerify %v\n", sysCtx.DockerDaemonInsecureSkipTLSVerify, sysCtx.DockerInsecureSkipTLSVerify) //TODO ALEX REMOVE ME
 
 	ctx, cancel := opts.Global.CommandTimeoutContext()
 	defer cancel()
