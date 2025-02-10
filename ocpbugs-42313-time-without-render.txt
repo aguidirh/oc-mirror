@@ -1,0 +1,66 @@
+aguidi@fedora:~/go/src/github.com/aguidirh/oc-mirror$ ./bin/oc-mirror -c /home/aguidi/go/src/github.com/aguidirh/oc-mirror/alex-tests/alex-isc/ocpbugs/ocpbugs-42313.yaml file:///home/aguidi/go/src/github.com/aguidirh/oc-mirror/alex-tests/ocpbugs-42313 --v2
+
+2025/02/07 17:48:35  [INFO]   : 👋 Hello, welcome to oc-mirror
+2025/02/07 17:48:35  [INFO]   : ⚙️  setting up the environment for you...
+2025/02/07 17:48:36  [INFO]   : 🔀 workflow mode: mirrorToDisk 
+2025/02/07 17:48:36  [INFO]   : 🕵  going to discover the necessary images...
+2025/02/07 17:48:36  [INFO]   : 🔍 collecting release images...
+2025/02/07 17:48:36  [INFO]   : 🔍 collecting operator images...
+ ⠴   (53s) Collecting catalog registry.redhat.io/redhat/community-operator-index:v4.13 
+2025/02/07 17:49:29  [WARN]   : oci://quay.io/kuadrant/wasm-shim:v0.5.0 'oci' is not supported in operator catalogs : SKIPPING
+2025/02/07 17:49:30  [WARN]   : oci://quay.io/kuadrant/wasm-shim:v0.6.0 'oci' is not supported in operator catalogs : SKIPPING
+2025/02/07 17:49:30  [WARN]   : oci://quay.io/kuadrant/wasm-shim:v0.1.0 'oci' is not supported in operator catalogs : SKIPPING
+2025/02/07 17:49:30  [WARN]   : oci://quay.io/kuadrant/wasm-shim:v0.1.0 'oci' is not supported in operator catalogs : SKIPPING
+2025/02/07 17:49:30  [WARN]   : oci://quay.io/kuadrant/wasm-shim:v0.2.0 'oci' is not supported in operator catalogs : SKIPPING
+2025/02/07 17:49:30  [WARN]   : oci://quay.io/kuadrant/wasm-shim:v0.2.0 'oci' is not supported in operator catalogs : SKIPPING
+2025/02/07 17:49:30  [WARN]   : oci://quay.io/kuadrant/wasm-shim:v0.3.0 'oci' is not supported in operator catalogs : SKIPPING
+2025/02/07 17:49:30  [WARN]   : oci://quay.io/kuadrant/wasm-shim:v0.3.0 'oci' is not supported in operator catalogs : SKIPPING
+2025/02/07 17:49:30  [WARN]   : oci://quay.io/kuadrant/wasm-shim:v0.3.0 'oci' is not supported in operator catalogs : SKIPPING
+2025/02/07 17:49:30  [WARN]   : oci://quay.io/kuadrant/wasm-shim:v0.3.0 'oci' is not supported in operator catalogs : SKIPPING
+2025/02/07 17:49:30  [WARN]   : oci://quay.io/kuadrant/wasm-shim:v0.3.0 'oci' is not supported in operator catalogs : SKIPPING
+2025/02/07 17:49:30  [WARN]   : oci://quay.io/kuadrant/wasm-shim:v0.4.0 'oci' is not supported in operator catalogs : SKIPPING
+2025/02/07 17:49:30  [WARN]   : error parsing image quay.io/noobaa/pause : quay.io/noobaa/pause unable to parse image correctly : tag and digest are empty
+2025/02/07 17:49:30  [WARN]   : error parsing image registry.redhat.io/openshift4/ose-kube-rbac-proxy : registry.redhat.io/openshift4/ose-kube-rbac-proxy unable to parse image correctly : tag and digest are empty
+2025/02/07 17:49:30  [WARN]   : error parsing image registry.redhat.io/openshift4/ose-kube-rbac-proxy : registry.redhat.io/openshift4/ose-kube-rbac-proxy unable to parse image correctly : tag and digest are empty
+2025/02/07 17:49:30  [WARN]   : error parsing image quay.io/sosivio/draingo@ : quay.io/sosivio/draingo@ unable to parse image correctly : invalid digest
+2025/02/07 17:49:30  [WARN]   : error parsing image registry.redhat.io/openshift4/ose-kube-rbac-proxy : registry.redhat.io/openshift4/ose-kube-rbac-proxy unable to parse image correctly : tag and digest are empty
+2025/02/07 17:49:30  [WARN]   : error parsing image registry.redhat.io/openshift4/ose-kube-rbac-proxy : registry.redhat.io/openshift4/ose-kube-rbac-proxy unable to parse image correctly : tag and digest are empty
+2025/02/07 17:49:30  [WARN]   : error parsing image registry.redhat.io/openshift4/ose-kube-rbac-proxy : registry.redhat.io/openshift4/ose-kube-rbac-proxy unable to parse image correctly : tag and digest are empty
+2025/02/07 17:49:30  [WARN]   : error parsing image registry.redhat.io/openshift4/ose-kube-rbac-proxy : registry.redhat.io/openshift4/ose-kube-rbac-proxy unable to parse image correctly : tag and digest are empty
+ ⠦   (53s) Collecting catalog registry.redhat.io/redhat/community-operator-index:v4.13 
+2025/02/07 17:49:30  [WARN]   : error parsing image centos/postgresql-10-centos7 : centos/postgresql-10-centos7 unable to parse image correctly : tag and digest are empty
+2025/02/07 17:49:30  [WARN]   : error parsing image centos/postgresql-10-centos7 : centos/postgresql-10-centos7 unable to parse image correctly : tag and digest are empty
+ ✓   (53s) Collecting catalog registry.redhat.io/redhat/community-operator-index:v4.13 
+2025/02/07 17:49:30  [WARN]   : registry.redhat.io/openshift4/ose-kube-rbac-proxy unable to parse image correctly : tag and digest are empty : SKIPPING
+2025/02/07 17:49:30  [WARN]   : registry.redhat.io/openshift4/ose-kube-rbac-proxy unable to parse image correctly : tag and digest are empty : SKIPPING
+2025/02/07 17:49:30  [WARN]   : registry.redhat.io/openshift4/ose-kube-rbac-proxy unable to parse image correctly : tag and digest are empty : SKIPPING
+2025/02/07 17:49:30  [WARN]   : quay.io/sosivio/draingo@ unable to parse image correctly : invalid digest : SKIPPING
+2025/02/07 17:49:30  [WARN]   : registry.redhat.io/openshift4/ose-kube-rbac-proxy unable to parse image correctly : tag and digest are empty : SKIPPING
+2025/02/07 17:49:30  [WARN]   : registry.redhat.io/openshift4/ose-kube-rbac-proxy unable to parse image correctly : tag and digest are empty : SKIPPING
+2025/02/07 17:49:30  [WARN]   : [OperatorImageCollector] ghcr.io/shipwright-io/operator/operator:0.9.0@sha256:2bd0f99b2305bdf1e4eab1ce8a41d34e3721f54b491195b11938cd4124f620ae has both tag and digest : using digest to pull, but tag only for mirroring
+2025/02/07 17:49:30  [WARN]   : [OperatorImageCollector] ghcr.io/shipwright-io/operator/operator:0.13.0@sha256:12cd5f936043c96f31cf571d7a4f8b6f2e240852cd9ad1a5423dbab0c208b542 has both tag and digest : using digest to pull, but tag only for mirroring
+2025/02/07 17:49:30  [WARN]   : quay.io/noobaa/pause unable to parse image correctly : tag and digest are empty : SKIPPING
+2025/02/07 17:49:30  [WARN]   : centos/postgresql-10-centos7 unable to parse image correctly : tag and digest are empty : SKIPPING
+2025/02/07 17:49:30  [WARN]   : centos/postgresql-10-centos7 unable to parse image correctly : tag and digest are empty : SKIPPING
+2025/02/07 17:49:30  [WARN]   : registry.redhat.io/openshift4/ose-kube-rbac-proxy unable to parse image correctly : tag and digest are empty : SKIPPING
+2025/02/07 17:49:30  [INFO]   : 🔍 collecting additional images...
+2025/02/07 17:49:30  [INFO]   : 🔍 collecting helm images...
+2025/02/07 17:49:30  [INFO]   : 🔂 rebuilding catalogs
+2025/02/07 17:49:30  [INFO]   : 🚀 Start copying the images...
+2025/02/07 17:49:30  [INFO]   : 📌 images to copy 11774 
+ ✓   (4s) elasticache-controller:v0.0.19 ➡️  cache 
+ ✓   (23s) susql_operator:0.0.27 ➡️  cache 
+ ✓   (28s) hyperconverged-cluster-operator@sha256:35c1d5716a6ef518b84a62313f273fc3cd1c47ecd26b66bcf3d0c4bc8917b7fb ➡️  cache 
+ ✓   (40s) ec2-controller:1.3.1 ➡️  cache 
+ ✓   (1m12s) kaniko-executor@sha256:39778b90c2b2afc30261e4ad5135805e1a10a2b60e2e53108fb9f80487f1208a ➡️  cache 
+ ⠦   (1m28s) jaeger-operator:1.45.0 ➡️  cache 
+ ⠦   (1m28s) kafka-bridge@sha256:d6be183e492f8f88157ab9fe0af53950df8b6711a8a8c33da465de6064f6f86e ➡️  cache 
+ ⠦   (1m28s) kafka@sha256:2249dad688c10237cbaad20ad5575561ac844429acba2a85cd526f11ee6707c6 ➡️  cache 
+ ⠦   (1m28s) kafka@sha256:56e2fc1c2a4c8aaa517478f228ab9ea81c9a8f990b86bac2c0896338e3f4656c ➡️  cache 
+ ⠦   (1m28s) kafka@sha256:cab70fa2bb9b731209ed1c4829e1e8a6ac37bff62b6443b79c9ec744b02c9256 ➡️  cache 
+ ⠦   (1m5s) maven-builder@sha256:2ee5d1a63dc56c31f9c30755bb7564952752bcd39c45d00dfea42c09673eaa0e ➡️  cache 
+ ⠴   (1m0s) operator@sha256:59df996575607fc4fe348c54904b782a5691688a66c71abeca2bf127a2433180 ➡️  cache 
+ ⠙   (48s) sigstore-helm-operator@sha256:d9c6eb162b97a1aa1ad3bf515db65d01a96e55b6f8bcd646864d3e64a3ee2b9e ➡️  cache 
+ ⠦   (10s) kube-rbac-proxy@sha256:e10d1d982dd653db74ca87a1d1ad017bc5ef1aeb651bdea089debf16485b080b ➡️  cache 
+5 / 11774 (1m28s) [----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------] 0 %
+^C

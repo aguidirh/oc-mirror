@@ -413,7 +413,7 @@ func (o *FilterCollector) OperatorImageCollector(ctx context.Context) (v2alpha1.
 			}
 		}
 
-		ri, err := o.ctlgHandler.getRelatedImagesFromCatalog(filteredDC, copyImageSchemaMap)
+		ri, err := o.ctlgHandler.getRelatedImagesFromCatalog(filteredDC, copyImageSchemaMap, o.Opts.Global.RenderBundles)
 		if err != nil {
 			spinner.Abort(true)
 			spinner.Wait()

@@ -16,7 +16,7 @@ type catalogHandlerInterface interface {
 	getDeclarativeConfig(filePath string) (*declcfg.DeclarativeConfig, error)
 	getCatalog(filePath string) (OperatorCatalog, error)
 	filterRelatedImagesFromCatalog(operatorCatalog OperatorCatalog, ctlgInIsc v2alpha1.Operator, copyImageSchemaMap *v2alpha1.CopyImageSchemaMap) (map[string][]v2alpha1.RelatedImage, error)
-	getRelatedImagesFromCatalog(dc *declcfg.DeclarativeConfig, copyImageSchemaMap *v2alpha1.CopyImageSchemaMap) (map[string][]v2alpha1.RelatedImage, error)
+	getRelatedImagesFromCatalog(dc *declcfg.DeclarativeConfig, copyImageSchemaMap *v2alpha1.CopyImageSchemaMap, renderBundles bool) (map[string][]v2alpha1.RelatedImage, error)
 }
 
 type imageDispatcher interface {

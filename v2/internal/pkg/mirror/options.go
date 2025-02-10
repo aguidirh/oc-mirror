@@ -56,6 +56,7 @@ type GlobalOptions struct {
 	DeleteID           string        // This flag is used to append to the artifacts created by the delete functionality
 	DeleteYaml         string        // This flag will use the contents of the indicated yaml as basis to delete the local cache and remote registry
 	CacheDir           string        // Path to the cache directory
+	RenderBundles      bool          //Render olm bundles
 }
 
 type CopyOptions struct {

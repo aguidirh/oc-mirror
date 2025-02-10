@@ -7,12 +7,15 @@ import (
 	"os"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/blang/semver/v4"
 	"github.com/openshift/oc-mirror/v2/internal/pkg/api/v2alpha1"
 	"github.com/openshift/oc-mirror/v2/internal/pkg/image"
 	clog "github.com/openshift/oc-mirror/v2/internal/pkg/log"
+	"github.com/operator-framework/operator-registry/alpha/action"
 	"github.com/operator-framework/operator-registry/alpha/declcfg"
+	"github.com/operator-framework/operator-registry/alpha/property"
 	filter "github.com/sherine-k/catalog-filter/pkg/filter/mirror-config/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -204,15 +207,59 @@ func (o catalogHandler) filterRelatedImagesFromCatalog(operatorCatalog OperatorC
 	return relatedImages, nil
 }
 
-func (o catalogHandler) getRelatedImagesFromCatalog(dc *declcfg.DeclarativeConfig, copyImageSchemaMap *v2alpha1.CopyImageSchemaMap) (map[string][]v2alpha1.RelatedImage, error) {
+func (o catalogHandler) getRelatedImagesFromCatalog(dc *declcfg.DeclarativeConfig, copyImageSchemaMap *v2alpha1.CopyImageSchemaMap, renderBundles bool) (map[string][]v2alpha1.RelatedImage, error) {
 	setInternalLog(o.Log)
 
 	relatedImages := make(map[string][]v2alpha1.RelatedImage)
 
+	bundleStartTime := time.Now()
+
 	for _, bundle := range dc.Bundles {
+
+		// r := action.Render{
+		// 	Refs:           []string{"quay.io/community-operator-pipeline-prod/argocd-operator@sha256:16c2cced24ae17315939b4e09e36396184634a9b86b8a2288ef93f4536caf861", "quay.io/community-operator-pipeline-prod/argocd-operator@sha256:c7664e237434bb51d0af2a702e9089da7e90aca468ab964872d06c9e86b9d561", "quay.io/community-operator-pipeline-prod/argocd-operator@sha256:b174047d566b280c58501a9b37daadc8ccebac2347de0c9124e42ab10d725ebe"},
+		// 	AllowedRefMask: action.RefBundleImage,
+		// }
+
+		//Rendering the entire catalog at once, does not work, only the head get the bundle metadata
+		// r := action.Render{
+		// 	Refs: []string{"/home/aguidi/go/src/github.com/aguidirh/oc-mirror/alex-tests/ocpbugs-42313/working-dir/operator-catalogs/community-operator-index/1bdcaec6e7f78fe642cd720fbadea3622adfa3c81f4b571863b453d0cd266a8c/catalog-config/configs/argocd-operator"},
+		// 	// AllowedRefMask: action.RefBundleImage,
+		// }
+
+		if renderBundles {
+			var found bool
+			for _, p := range bundle.Properties {
+				if p.Type == property.TypeBundleObject {
+					found = true
+				}
+			}
+
+			if !found {
+				r := action.Render{
+					Refs:           []string{bundle.Image},
+					AllowedRefMask: action.RefBundleImage,
+				}
+
+				testdc, err := r.Run(context.Background())
+				if err != nil {
+					o.Log.Error("error rendering bundle: %s", err.Error())
+				} else {
+					bundle = testdc.Bundles[0]
+				}
+			}
+		}
+
+		// err = saveDeclarativeConfig(*testdc, "/home/aguidi/go/src/github.com/aguidirh/oc-mirror/alex-tests/bundle-cfg-test/"+bundle.Name)
+
 		ris := handleRelatedImages(bundle, bundle.Package, copyImageSchemaMap)
 		relatedImages[bundle.Name] = ris
 	}
+
+	bundleEndTime := time.Now()
+	bundleExecTime := bundleEndTime.Sub(bundleStartTime)
+	o.Log.Info("bundle collection time     : %v", bundleExecTime)
+
 	return relatedImages, nil
 }
 
