@@ -1089,11 +1089,14 @@ func (o *ExecutorSchema) CollectAll(ctx context.Context) (v2alpha1.CollectorSche
 
 	o.Log.Info(emoji.LeftPointingMagnifyingGlass + " collecting operator images...")
 	// collect operators
+	opCollectorStartTime := time.Now()
 	operatorImgs, err := o.Operator.OperatorImageCollector(ctx)
 	if err != nil {
 		o.closeAll()
 		return v2alpha1.CollectorSchema{}, err
 	}
+	o.Log.Info("op collection time     : %v", time.Since(opCollectorStartTime))
+
 	oImgs := operatorImgs.AllImages
 	// exclude blocked images
 	oImgs = excludeImages(oImgs, o.Config.Mirror.BlockedImages)

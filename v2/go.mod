@@ -17,6 +17,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0
 	github.com/openshift/api v0.0.0-20240529192326-16d44e6d3e7d
+	github.com/operator-framework/api v0.27.0
 	github.com/operator-framework/operator-registry v1.47.0
 	github.com/otiai10/copy v1.14.0
 	github.com/sherine-k/catalog-filter v0.0.3
@@ -179,7 +180,6 @@ require (
 	github.com/opencontainers/runtime-tools v0.9.1-0.20241001195557-6c9570a1678f // indirect
 	github.com/opencontainers/selinux v1.11.1 // indirect
 	github.com/openshift/imagebuilder v1.2.15 // indirect
-	github.com/operator-framework/api v0.27.0 // indirect
 	github.com/ostreedev/ostree-go v0.0.0-20210805093236-719684c64e4f // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pkg/errors v0.9.1 // indirect

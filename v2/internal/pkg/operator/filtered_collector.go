@@ -6,20 +6,22 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"maps"
+	"os"
+	"path"
+	"path/filepath"
+	"strings"
+	"time"
+
 	"github.com/containers/image/v5/oci/layout"
 	"github.com/containers/image/v5/pkg/blobinfocache/none"
 	"github.com/containers/storage/pkg/archive"
 	"github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"github.com/operator-framework/operator-registry/alpha/property"
-	"io"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"maps"
-	"os"
-	"path"
-	"path/filepath"
 	"sigs.k8s.io/yaml"
-	"strings"
 
 	"github.com/containers/image/v5/types"
 	"github.com/opencontainers/go-digest"
@@ -45,11 +47,14 @@ type FilterCollector struct {
 func (o *FilterCollector) OperatorImageCollector(ctx context.Context) (v2alpha1.CollectorSchema, error) {
 
 	var (
-		allImages       []v2alpha1.CopyImageSchema
-		label           string
-		catalogImageDir string
-		catalogName     string
-		rebuiltTag      string
+		allImages                          []v2alpha1.CopyImageSchema
+		label                              string
+		catalogImageDir                    string
+		catalogName                        string
+		rebuiltTag                         string
+		getMetadataPropertyTypeDuration    time.Duration
+		hydrateChannelHeadMetadataDuration time.Duration
+		bundleGenerationCount              int
 	)
 	o.Log.Debug(collectorPrefix+"setting copy option o.Opts.MultiArch=%s when collecting operator images", o.Opts.MultiArch)
 
@@ -361,7 +366,9 @@ func (o *FilterCollector) OperatorImageCollector(ctx context.Context) (v2alpha1.
 				var filteredDigestPath string
 				var filterDigest string
 
+				getMetadataPropertyTypeStartTime := time.Now()
 				metadataPropertyType := o.ctlgHandler.getMetadataPropertyType(originalDC)
+				getMetadataPropertyTypeDuration = time.Since(getMetadataPropertyTypeStartTime)
 
 				filteredDC, err = filterCatalog(ctx, *originalDC, op)
 				if err != nil {
@@ -370,13 +377,15 @@ func (o *FilterCollector) OperatorImageCollector(ctx context.Context) (v2alpha1.
 					return v2alpha1.CollectorSchema{}, err
 				}
 
+				hydrateChannelHeadMetadataTime := time.Now()
 				// Let's use filteredDC and metadataPropertyType to
 				// hydrate channel heads that lack metadata?
-				if err := o.hydrateChannelHeadMetadata(ctx, filteredDC, metadataPropertyType); err != nil {
+				if err := o.hydrateChannelHeadMetadata(ctx, filteredDC, metadataPropertyType, &bundleGenerationCount); err != nil {
 					spinner.Abort(true)
 					spinner.Wait()
 					return v2alpha1.CollectorSchema{}, err
 				}
+				hydrateChannelHeadMetadataDuration = time.Since(hydrateChannelHeadMetadataTime)
 
 				filterDigest, err = digestOfFilter(op)
 				if err != nil {
@@ -480,6 +489,10 @@ func (o *FilterCollector) OperatorImageCollector(ctx context.Context) (v2alpha1.
 		}
 		spinner.Increment()
 		p.Wait()
+		o.Log.Info("Bundle Regeneration times     : %d", bundleGenerationCount)
+		o.Log.Info("getMetadataPropertyTypeDuration     : %v", getMetadataPropertyTypeDuration)
+		o.Log.Info("hydrateChannelHeadMetadataDuration     : %v", hydrateChannelHeadMetadataDuration)
+		o.Log.Info("Bundle Metadata Generation Duration     : %v", getMetadataPropertyTypeDuration+hydrateChannelHeadMetadataDuration)
 	}
 
 	o.Log.Debug(collectorPrefix+"related images length %d ", len(relatedImages))
@@ -537,7 +550,7 @@ func createFolders(paths []string) error {
 	return errors.Join(errs...)
 }
 
-func (o FilterCollector) hydrateChannelHeadMetadata(ctx context.Context, dc *declcfg.DeclarativeConfig, metadataPropertyType string) error {
+func (o FilterCollector) hydrateChannelHeadMetadata(ctx context.Context, dc *declcfg.DeclarativeConfig, metadataPropertyType string, count *int) error {
 	channelHeadsNeedingMetadata := sets.New[string]()
 	if err := func() error {
 		m, err := declcfg.ConvertToModel(*dc)
@@ -585,12 +598,15 @@ func (o FilterCollector) hydrateChannelHeadMetadata(ctx context.Context, dc *dec
 				return err
 			}
 			dc.Bundles[i].Properties = append(dc.Bundles[i].Properties, property.MustBuildBundleObject(csvJson))
+			*count++
 		case property.TypeCSVMetadata:
 			dc.Bundles[i].Properties = append(dc.Bundles[i].Properties, property.MustBuildCSVMetadata(*csv))
+			*count++
 		default:
 			panic(fmt.Sprintf("unknown property type: %s", metadataPropertyType))
 		}
 	}
+
 	return nil
 }
 
