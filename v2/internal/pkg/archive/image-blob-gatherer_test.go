@@ -8,9 +8,10 @@ import (
 	"testing"
 
 	"github.com/google/go-containerregistry/pkg/registry"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/openshift/oc-mirror/v2/internal/pkg/common"
 	"github.com/openshift/oc-mirror/v2/internal/pkg/mirror"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestImageBlobGatherer_GatherBlobs(t *testing.T) {

@@ -82,6 +82,8 @@ func (o *LocalStorageCollector) ReleaseImageCollector(ctx context.Context) ([]v2
 
 				optsCopy := o.Opts
 				optsCopy.Stdout = io.Discard
+				//TODO ALEX change me with the value from the flag
+				optsCopy.RemoveSignatures = true
 
 				err = o.Mirror.Run(ctx, src, dest, "copy", &optsCopy)
 				if err != nil {

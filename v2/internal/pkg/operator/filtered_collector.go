@@ -403,6 +403,8 @@ func (o FilterCollector) ensureCatalogInOCIFormat(ctx context.Context, imgSpec i
 	if imgSpec.Transport != ociProtocol {
 		opts := o.Opts
 		opts.Stdout = io.Discard
+		//TODO ALEX change me with the value from the flag
+		opts.RemoveSignatures = true
 
 		src := dockerProtocol + catalog
 		dest := ociProtocolTrimmed + catalogImageDir
