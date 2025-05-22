@@ -145,8 +145,18 @@ func (o *MirrorArchive) addImagesDiff(ctx context.Context, collectedImages []v2a
 	allAddedBlobs := make(map[string]struct{})
 	for _, img := range collectedImages {
 		imgBlobs, err := o.blobGatherer.GatherBlobs(ctx, img.Destination)
-		if err != nil && !errors.As(err, &SignatureBlobGathererError{}) {
+		// TODO check if there is a more elegant way of doing that errors.As, probably we could do errors.As only once and remove the ones from L157 and L224
+		var sigErr *SignatureBlobGathererError
+		if err != nil && !errors.As(err, &sigErr) {
 			return nil, fmt.Errorf("unable to find blobs corresponding to %s: %w", img.Destination, err)
+		}
+
+		// TODO operators, additional and helm images should be taken into account when exit code is working on the archive pkg
+		if err := handleSignatureErrors(img, err); err != nil {
+			var sigErr *SignatureBlobGathererError
+			if errors.As(err, &sigErr) && sigErr.ReleaseErr != nil {
+				return nil, sigErr
+			}
 		}
 
 		addedBlobs, err := o.addBlobsDiff(imgBlobs, historyBlobs, allAddedBlobs)
@@ -205,4 +215,32 @@ func RemovePastArchives(destination string) error {
 		}
 	}
 	return nil
+}
+
+func handleSignatureErrors(img v2alpha1.CopyImageSchema, err error) error {
+
+	var sigErr *SignatureBlobGathererError
+
+	if err == nil || !errors.As(err, &sigErr) {
+		return nil
+	}
+
+	switch {
+	case img.Type.IsOperator():
+		sigErr.OperatorErr = sigErr.SigError
+
+	case img.Type.IsRelease():
+		sigErr.ReleaseErr = sigErr.SigError
+
+	case img.Type.IsAdditionalImage():
+		sigErr.AdditionalImgErr = sigErr.SigError
+
+	case img.Type.IsHelmImage():
+		sigErr.HelmErr = sigErr.SigError
+
+	}
+
+	// save logs
+
+	return sigErr
 }
