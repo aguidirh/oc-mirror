@@ -16,6 +16,7 @@ import (
 
 	"github.com/openshift/oc-mirror/v2/internal/pkg/api/v2alpha1"
 	clog "github.com/openshift/oc-mirror/v2/internal/pkg/log"
+	ocmanifest "github.com/openshift/oc-mirror/v2/internal/pkg/manifest"
 	"github.com/openshift/oc-mirror/v2/internal/pkg/mirror"
 )
 
@@ -107,12 +108,8 @@ func (m *mockManifest) ImageManifest(ctx context.Context, sourceCtx *types.Syste
 	}
 }
 
-func (m *mockManifest) GetManifestListDigests(ctx context.Context, sourceCtx *types.SystemContext, source string) ([]string, error) {
-	return nil, nil
-}
-
-func (m *mockManifest) ImageBlobSizes(ctx context.Context, sourceCtx *types.SystemContext, imgRef string, platformFilters []v2alpha1.InstancePlatformFilter) ([]v2alpha1.BlobSizeInfo, error) {
-	return nil, nil
+func (m *mockManifest) InspectImage(ctx context.Context, sourceCtx *types.SystemContext, imgRef string, platformFilters []v2alpha1.InstancePlatformFilter, includeBlobSizes bool) (ocmanifest.ImageInspection, error) {
+	return ocmanifest.ImageInspection{}, nil
 }
 
 func TestSigstoreAttachmentTag(t *testing.T) {

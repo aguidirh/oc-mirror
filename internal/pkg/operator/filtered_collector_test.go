@@ -26,6 +26,7 @@ import (
 	"github.com/openshift/oc-mirror/v2/internal/pkg/folder"
 	"github.com/openshift/oc-mirror/v2/internal/pkg/image"
 	clog "github.com/openshift/oc-mirror/v2/internal/pkg/log"
+	"github.com/openshift/oc-mirror/v2/internal/pkg/manifest"
 	"github.com/openshift/oc-mirror/v2/internal/pkg/mirror"
 	"github.com/openshift/oc-mirror/v2/internal/pkg/parser"
 )
@@ -1058,12 +1059,8 @@ func (o MockManifest) ImageManifest(ctx context.Context, srcCtx *types.SystemCon
 	return nil, "", errors.New("not implemented")
 }
 
-func (o MockManifest) GetManifestListDigests(ctx context.Context, sourceCtx *types.SystemContext, source string) ([]string, error) {
-	return nil, nil
-}
-
-func (o MockManifest) ImageBlobSizes(ctx context.Context, sourceCtx *types.SystemContext, imgRef string, platformFilters []v2alpha1.InstancePlatformFilter) ([]v2alpha1.BlobSizeInfo, error) {
-	return nil, nil
+func (o MockManifest) InspectImage(ctx context.Context, sourceCtx *types.SystemContext, imgRef string, platformFilters []v2alpha1.InstancePlatformFilter, includeBlobSizes bool) (manifest.ImageInspection, error) {
+	return manifest.ImageInspection{}, nil
 }
 
 func (o MockHandler) getRelatedImagesFromCatalog(dc *declcfg.DeclarativeConfig, copyImageSchemaMap *v2alpha1.CopyImageSchemaMap) (map[string][]v2alpha1.RelatedImage, error) {

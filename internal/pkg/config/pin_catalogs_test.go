@@ -20,6 +20,7 @@ import (
 	"github.com/openshift/oc-mirror/v2/internal/pkg/api/v2alpha1"
 	"github.com/openshift/oc-mirror/v2/internal/pkg/image"
 	clog "github.com/openshift/oc-mirror/v2/internal/pkg/log"
+	"github.com/openshift/oc-mirror/v2/internal/pkg/manifest"
 	"github.com/openshift/oc-mirror/v2/internal/pkg/mirror"
 )
 
@@ -64,12 +65,8 @@ func (m *MockManifest) GetOperatorConfig(file string) (*v2alpha1.OperatorConfigS
 func (m *MockManifest) ImageManifest(ctx context.Context, srcCtx *types.SystemContext, ref string, instanceDigest *digest.Digest) ([]byte, string, error) {
 	return nil, "", nil
 }
-func (m *MockManifest) GetManifestListDigests(ctx context.Context, sourceCtx *types.SystemContext, source string) ([]string, error) {
-	return nil, nil
-}
-
-func (m *MockManifest) ImageBlobSizes(ctx context.Context, sourceCtx *types.SystemContext, imgRef string, platformFilters []v2alpha1.InstancePlatformFilter) ([]v2alpha1.BlobSizeInfo, error) {
-	return nil, nil
+func (m *MockManifest) InspectImage(ctx context.Context, sourceCtx *types.SystemContext, imgRef string, platformFilters []v2alpha1.InstancePlatformFilter, includeBlobSizes bool) (manifest.ImageInspection, error) {
+	return manifest.ImageInspection{}, nil
 }
 
 const (

@@ -221,15 +221,20 @@ func TestExtractOCILayers(t *testing.T) {
 
 func TestManifestListBlobSizeHelpers(t *testing.T) {
 	m := &Manifest{Log: clog.New("debug")}
-	blobs := []v2alpha1.BlobSizeInfo{{Digest: "sha256:abc", Size: 10}}
-
-	_, err := m.finishManifestListBlobSizes(blobs, true, 0, 0, 0)
-	assert.ErrorContains(t, err, "no instances matched the requested platforms")
-	_, err = m.finishManifestListBlobSizes(blobs, false, 2, 1, 0)
-	assert.ErrorContains(t, err, "1 of 2 sub-manifests could not be sized")
-	got, err := m.finishManifestListBlobSizes(blobs, false, 1, 0, 0)
+	list, err := manifest.ListFromBlob([]byte(`{"schemaVersion":2,"manifests":[]}`), specv1.MediaTypeImageIndex)
+	require.NoError(t, err)
+	_, err = m.blobSizesFromManifestList(context.Background(), nil, "unused", list,
+		[]v2alpha1.InstancePlatformFilter{{OS: "linux", Architecture: "amd64"}})
+	assert.ErrorContains(t, err, "no instances found for platform linux/amd64")
+	got, err := m.blobSizesFromManifestList(context.Background(), nil, "unused", list, nil)
 	assert.NoError(t, err)
-	assert.Equal(t, blobs, got)
+	assert.Empty(t, got)
+
+	missingDigest := digest.FromString("missing child")
+	list, err = manifest.ListFromBlob([]byte(fmt.Sprintf(`{"schemaVersion":2,"manifests":[{"digest":%q,"size":1}]}`, missingDigest)), specv1.MediaTypeImageIndex)
+	require.NoError(t, err)
+	_, err = m.blobSizesFromManifestList(context.Background(), nil, "invalid-source", list, nil)
+	assert.ErrorContains(t, err, "fetching manifest instance "+missingDigest.String())
 
 	amd64 := manifest.ListUpdate{}
 	amd64.ReadOnly.Platform = &specv1.Platform{OS: "linux", Architecture: "amd64"}
@@ -237,14 +242,14 @@ func TestManifestListBlobSizeHelpers(t *testing.T) {
 	attestation := manifest.ListUpdate{}
 	attestation.ReadOnly.Platform = &specv1.Platform{OS: "unknown", Architecture: "unknown"}
 	attestation.ReadOnly.Annotations = map[string]string{"vnd.docker.reference.type": "attestation-manifest"}
-	filtered := map[string]bool{"linux/amd64": true}
+	filtered := map[string]bool{"linux/amd64": false}
 
-	assert.True(t, shouldSizeManifestInstance(amd64, nil, nil))
-	assert.True(t, shouldSizeManifestInstance(platformless, nil, nil))
-	assert.False(t, shouldSizeManifestInstance(attestation, nil, nil))
-	assert.True(t, shouldSizeManifestInstance(amd64, nil, filtered))
-	assert.False(t, shouldSizeManifestInstance(platformless, nil, filtered))
-	assert.False(t, shouldSizeManifestInstance(amd64, fmt.Errorf("boom"), filtered))
+	assert.True(t, shouldSizeManifestInstance(amd64, nil))
+	assert.True(t, shouldSizeManifestInstance(platformless, nil))
+	assert.False(t, shouldSizeManifestInstance(attestation, nil))
+	assert.True(t, shouldSizeManifestInstance(amd64, filtered))
+	assert.False(t, shouldSizeManifestInstance(platformless, filtered))
+	assert.False(t, shouldSizeManifestInstance(attestation, filtered))
 }
 
 func TestImageBlobSizesPlatformFilter(t *testing.T) {
@@ -273,18 +278,20 @@ func TestImageBlobSizesPlatformFilter(t *testing.T) {
 
 	amd64Manifest, err := amd64Img.Manifest()
 	require.NoError(t, err)
-	want := make([]v2alpha1.BlobSizeInfo, 0, len(amd64Manifest.Layers)+1)
+	want := make([]types.BlobInfo, 0, len(amd64Manifest.Layers)+1)
 	for _, layer := range amd64Manifest.Layers {
-		want = append(want, v2alpha1.BlobSizeInfo{Digest: layer.Digest.String(), Size: layer.Size})
+		want = append(want, types.BlobInfo{Digest: digest.Digest(layer.Digest.String()), Size: layer.Size, MediaType: string(layer.MediaType)})
 	}
-	want = append(want, v2alpha1.BlobSizeInfo{Digest: amd64Manifest.Config.Digest.String(), Size: amd64Manifest.Config.Size})
+	want = append(want, types.BlobInfo{Digest: digest.Digest(amd64Manifest.Config.Digest.String()), Size: amd64Manifest.Config.Size, MediaType: string(amd64Manifest.Config.MediaType)})
 
-	blobs, err := (&Manifest{Log: clog.New("debug")}).ImageBlobSizes(
+	inspection, err := (&Manifest{Log: clog.New("debug")}).InspectImage(
 		context.Background(), &types.SystemContext{}, consts.OciProtocolTrimmed+dir,
-		[]v2alpha1.InstancePlatformFilter{{OS: "linux", Architecture: "amd64"}},
+		[]v2alpha1.InstancePlatformFilter{{OS: "linux", Architecture: "amd64"}}, true,
 	)
 	require.NoError(t, err)
-	assert.ElementsMatch(t, want, blobs)
+	require.NoError(t, inspection.SizeError)
+	assert.Len(t, inspection.ManifestListDigests, 2)
+	assert.ElementsMatch(t, want, inspection.Blobs)
 }
 
 func TestParseBlobSizes(t *testing.T) {
@@ -292,9 +299,8 @@ func TestParseBlobSizes(t *testing.T) {
 
 	manifestBytes, err := os.ReadFile(fixture)
 	require.NoError(t, err)
-	blobs, unknown, err := parseBlobSizes(manifestBytes, specv1.MediaTypeImageManifest)
+	blobs, err := parseBlobSizes(manifestBytes, specv1.MediaTypeImageManifest)
 	require.NoError(t, err)
-	assert.Equal(t, 0, unknown)
 	assert.Len(t, blobs, 7)
 	var total int64
 	for _, b := range blobs {
@@ -302,9 +308,8 @@ func TestParseBlobSizes(t *testing.T) {
 	}
 	assert.Equal(t, int64(144979560), total)
 
-	_, unknown, err = parseBlobSizes([]byte("not json"), specv1.MediaTypeImageManifest)
+	_, err = parseBlobSizes([]byte("not json"), specv1.MediaTypeImageManifest)
 	assert.Error(t, err)
-	assert.Equal(t, 0, unknown)
 
 	m, err := (&Manifest{}).GetOCIImageManifest(fixture)
 	require.NoError(t, err)
@@ -314,8 +319,25 @@ func TestParseBlobSizes(t *testing.T) {
 	m.Layers[0].Size, m.Layers[1].Size, m.Layers[2].Size = 10000, -1, 0
 	manifestBytes, err = json.Marshal(m)
 	require.NoError(t, err)
-	blobs, unknown, err = parseBlobSizes(manifestBytes, specv1.MediaTypeImageManifest)
+	blobs, err = parseBlobSizes(manifestBytes, specv1.MediaTypeImageManifest)
+	require.ErrorContains(t, err, "unknown size for blob "+m.Layers[1].Digest.String())
+	assert.Nil(t, blobs)
+
+	// Zero is a known size, not the unknown-size sentinel (-1).
+	m.Layers[1].Size = 0
+	manifestBytes, err = json.Marshal(m)
 	require.NoError(t, err)
-	assert.Equal(t, 3, unknown)
-	assert.Equal(t, []v2alpha1.BlobSizeInfo{{Digest: m.Layers[0].Digest.String(), Size: 10000}}, blobs)
+	blobs, err = parseBlobSizes(manifestBytes, specv1.MediaTypeImageManifest)
+	require.NoError(t, err)
+	assert.Len(t, blobs, 4)
+	assert.Equal(t, manifest.BlobInfoFromOCI1Descriptor(m.Layers[0]), blobs[0])
+	assert.Zero(t, blobs[1].Size)
+	assert.Zero(t, blobs[2].Size)
+	assert.Zero(t, blobs[3].Size)
+
+	m.Config.Size = -1
+	manifestBytes, err = json.Marshal(m)
+	require.NoError(t, err)
+	_, err = parseBlobSizes(manifestBytes, specv1.MediaTypeImageManifest)
+	assert.ErrorContains(t, err, "unknown size for blob "+m.Config.Digest.String())
 }

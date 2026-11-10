@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"sync"
 
@@ -22,11 +23,6 @@ import (
 	"github.com/openshift/oc-mirror/v2/internal/pkg/mirror"
 )
 
-type manifestFetchCacher interface {
-	BeginManifestCache()
-	EndManifestCache()
-}
-
 func (o *ExecutorSchema) DryRun(ctx context.Context, cs v2alpha1.CollectorSchema) error {
 	allImages := cs.AllImages
 	outDir := filepath.Join(o.Opts.Global.WorkingDir, dryRunOutDir)
@@ -38,16 +34,19 @@ func (o *ExecutorSchema) DryRun(ctx context.Context, cs v2alpha1.CollectorSchema
 		return err
 	}
 
-	// Reuse top-level manifests between list inspection and size estimation.
-	if cacher, ok := o.Manifest.(manifestFetchCacher); ok {
-		cacher.BeginManifestCache()
-		defer cacher.EndManifestCache()
-	}
-
-	var manifestListDigests map[string][]string
-	if o.Opts.IsDryRunManifestLists {
-		o.Log.Info(emoji.LeftPointingMagnifyingGlass+" inspecting %d images for manifest lists...", len(allImages))
-		manifestListDigests = o.inspectManifestLists(ctx, allImages)
+	// Inspect each source once, retaining mapping digests even if sizing fails.
+	var inspections []dryRunImageInspection
+	manifestListDigests := make(map[string][]string)
+	if o.Manifest != nil {
+		inspections = o.inspectImages(ctx, cs)
+		if o.Opts.IsDryRunManifestLists {
+			for _, inspection := range inspections {
+				if inspection.Error != nil {
+					o.Log.Warn("unable to inspect manifest for %s: %v", inspection.Source, inspection.Error)
+				}
+				manifestListDigests[inspection.Source] = inspection.Digests
+			}
+		}
 	}
 
 	if err := o.writeDryRunMapping(ctx, allImages, manifestListDigests, outDir); err != nil {
@@ -63,7 +62,7 @@ func (o *ExecutorSchema) DryRun(ctx context.Context, cs v2alpha1.CollectorSchema
 
 	// Size estimation (appended AFTER existing output for backward compatibility)
 	if o.Manifest != nil {
-		o.logSizeReport(o.estimateDryRunSize(ctx, cs))
+		o.logSizeReport(o.estimateDryRunSize(cs, inspections))
 	}
 
 	return nil
@@ -110,12 +109,11 @@ func (o *ExecutorSchema) writeDryRunMapping(ctx context.Context, allImages []v2a
 }
 
 // estimateDryRunSize builds the dry-run size report for the current workflow mode.
-func (o *ExecutorSchema) estimateDryRunSize(ctx context.Context, cs v2alpha1.CollectorSchema) v2alpha1.DryRunSizeReport {
+func (o *ExecutorSchema) estimateDryRunSize(cs v2alpha1.CollectorSchema, inspections []dryRunImageInspection) dryRunSizeReport {
 	allImages := cs.AllImages
-	o.Log.Info(emoji.LeftPointingMagnifyingGlass + " estimating image sizes...")
 	if o.Opts.IsDiskToMirror() {
 		// d2m: all Sources are local-cache; size comes from archive tarballs on disk.
-		report := v2alpha1.DryRunSizeReport{ImageCount: len(allImages)}
+		report := dryRunSizeReport{ImageCount: len(allImages)}
 		tarballSize, tarballErr := computeTarballFilesSize(o.Opts.Global.From)
 		if tarballErr != nil {
 			o.Log.Warn("unable to read archive for size estimate; tarball size excluded")
@@ -129,11 +127,9 @@ func (o *ExecutorSchema) estimateDryRunSize(ctx context.Context, cs v2alpha1.Col
 		return report
 	}
 
-	// m2m/m2d: size from remote manifests (skip local-cache Sources).
-	sizingImages := dedupeImagesBySource(filterLocalCacheSourceImages(allImages, o.Opts.LocalStorageFQDN))
-	sizeResults := o.estimateImageSizes(ctx, sizingImages, cs.PlatformFilters)
-	report := computeSizeReport(sizeResults)
-	report.TotalSize = adjustSizeForWorkflow(report.TotalSize, o.Opts.Mode, sizeResults, sizingImages, 0)
+	// m2m/m2d: use descriptors collected by the combined inspection pass.
+	report := computeSizeReport(inspections)
+	report.TotalSize = adjustSizeForWorkflow(report.TotalSize, o.Opts.Mode, inspections, allImages)
 	return report
 }
 
@@ -205,55 +201,6 @@ func subDigestDestination(dest string, digest string) string {
 	return destSpec.Transport + destSpec.Name + "@" + digest
 }
 
-// inspectManifestLists concurrently inspects all images to identify manifest lists
-// and returns a map of source references to their sub-manifest digests.
-// Concurrency is bounded via a semaphore to avoid overwhelming registries.
-func (o *ExecutorSchema) inspectManifestLists(ctx context.Context, images []v2alpha1.CopyImageSchema) map[string][]string {
-	manifestListDigests := make(map[string][]string)
-	var mu sync.Mutex
-	var wg sync.WaitGroup
-
-	parallelism := o.Opts.ParallelImages
-	if parallelism == 0 {
-		parallelism = maxParallelImageDownloads
-	}
-	semaphore := make(chan struct{}, parallelism)
-
-	cancelCtx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	for _, img := range images {
-		if cancelCtx.Err() != nil {
-			break
-		}
-
-		semaphore <- struct{}{}
-
-		wg.Add(1)
-		go func(source string) {
-			defer wg.Done()
-			defer func() { <-semaphore }()
-
-			var digests []string
-			sysCtx, err := o.newSystemContextForSource(source)
-			if err == nil {
-				digests, err = o.Manifest.GetManifestListDigests(cancelCtx, sysCtx, source)
-			}
-			if err != nil {
-				o.Log.Warn("unable to inspect manifest for %s: %v", source, err)
-				return
-			}
-			if len(digests) > 0 {
-				mu.Lock()
-				manifestListDigests[source] = digests
-				mu.Unlock()
-			}
-		}(img.Source)
-	}
-	wg.Wait()
-	return manifestListDigests
-}
-
 func (o *ExecutorSchema) newSystemContextForSource(source string) (*types.SystemContext, error) {
 	sysCtx, err := o.Opts.SrcImage.NewSystemContext()
 	if err != nil {
@@ -265,53 +212,100 @@ func (o *ExecutorSchema) newSystemContextForSource(source string) (*types.System
 	return sysCtx, nil
 }
 
-// estimateImageSizes concurrently fetches blob sizes for all images.
-// Errors are captured per-image.
-func (o *ExecutorSchema) estimateImageSizes(ctx context.Context, images []v2alpha1.CopyImageSchema, platformFilters map[string][]v2alpha1.InstancePlatformFilter) []v2alpha1.ImageSizeResult {
-	results := make([]v2alpha1.ImageSizeResult, len(images))
+type dryRunImageInspection struct {
+	Source    string
+	Digests   []string
+	Blobs     []types.BlobInfo
+	Error     error
+	SizeError error
+	platforms []v2alpha1.InstancePlatformFilter
+	size      bool
+}
+
+type dryRunSizeReport struct {
+	TotalSize       int64
+	ImageCount      int
+	Errors          []error
+	SizeUnavailable bool
+}
+
+// inspectionTasks groups sources while retaining the union of all requested
+// platforms. Any unrestricted request means all platforms must be sized.
+func (o *ExecutorSchema) inspectionTasks(cs v2alpha1.CollectorSchema) []dryRunImageInspection {
+	var tasks []dryRunImageInspection
+	seen := make(map[string]int)
+	for _, img := range cs.AllImages {
+		size := !o.Opts.IsDiskToMirror() && !isLocalCacheSource(img.Source, o.Opts.LocalStorageFQDN)
+		if !size && !o.Opts.IsDryRunManifestLists {
+			continue
+		}
+		idx, found := seen[img.Source]
+		if !found {
+			idx = len(tasks)
+			seen[img.Source] = idx
+			tasks = append(tasks, dryRunImageInspection{Source: img.Source})
+		}
+		task := &tasks[idx]
+		if !size {
+			continue
+		}
+		platforms := cs.PlatformFilters[img.Origin]
+		switch {
+		case !task.size:
+			task.platforms = append([]v2alpha1.InstancePlatformFilter(nil), platforms...)
+		case len(platforms) == 0:
+			task.platforms = nil
+		case len(task.platforms) > 0:
+			for _, platform := range platforms {
+				if !slices.Contains(task.platforms, platform) {
+					task.platforms = append(task.platforms, platform)
+				}
+			}
+		}
+		task.size = true
+	}
+	return tasks
+}
+
+// inspectImages is the only concurrent inspection pass. Each source is inspected
+// once for both mapping and sizing, with independently reported sizing failures.
+func (o *ExecutorSchema) inspectImages(ctx context.Context, cs v2alpha1.CollectorSchema) []dryRunImageInspection {
+	results := o.inspectionTasks(cs)
+	if len(results) > 0 {
+		o.Log.Info(emoji.LeftPointingMagnifyingGlass+" inspecting %d images for mapping and size metadata...", len(results))
+	}
 	var wg sync.WaitGroup
 
 	parallelism := o.Opts.ParallelImages
-	if parallelism == 0 {
+	if parallelism <= 0 {
 		parallelism = maxParallelImageDownloads
 	}
 	semaphore := make(chan struct{}, parallelism)
 
-	cancelCtx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	for i, img := range images {
-		if cancelCtx.Err() != nil {
-			break
+	for i := range results {
+		if err := ctx.Err(); err != nil {
+			results[i].Error = err
+			continue
 		}
-
-		semaphore <- struct{}{}
-
+		select {
+		case semaphore <- struct{}{}:
+		case <-ctx.Done():
+			results[i].Error = ctx.Err()
+			continue
+		}
 		wg.Add(1)
-		go func(idx int, source, origin string) {
+		go func(result *dryRunImageInspection) {
 			defer wg.Done()
 			defer func() { <-semaphore }()
-
-			result := v2alpha1.ImageSizeResult{Source: source}
-
-			sysCtx, err := o.newSystemContextForSource(source)
+			sysCtx, err := o.newSystemContextForSource(result.Source)
 			if err != nil {
-				result.Error = fmt.Sprintf("error creating system context: %v", err)
-				results[idx] = result
+				result.Error = err
 				return
 			}
-
-			// Platform filters are keyed by Origin, not Source (Source may be a local-cache ref).
-			blobs, err := o.Manifest.ImageBlobSizes(cancelCtx, sysCtx, source, platformFilters[origin])
-			if err != nil {
-				result.Error = fmt.Sprintf("error fetching blob sizes: %v", err)
-				results[idx] = result
-				return
-			}
-
-			result.Blobs = blobs
-			results[idx] = result
-		}(i, img.Source, img.Origin)
+			inspection, err := o.Manifest.InspectImage(ctx, sysCtx, result.Source, result.platforms, result.size)
+			result.Digests, result.Blobs = inspection.ManifestListDigests, inspection.Blobs
+			result.Error, result.SizeError = err, inspection.SizeError
+		}(&results[i])
 	}
 	wg.Wait()
 	return results
@@ -319,23 +313,24 @@ func (o *ExecutorSchema) estimateImageSizes(ctx context.Context, images []v2alph
 
 // computeSizeReport deduplicates blobs globally and computes the total unique
 // compressed content size. Errored images are recorded
-func computeSizeReport(results []v2alpha1.ImageSizeResult) v2alpha1.DryRunSizeReport {
-	var report v2alpha1.DryRunSizeReport
+func computeSizeReport(results []dryRunImageInspection) dryRunSizeReport {
+	var report dryRunSizeReport
 	blobSeen := make(map[string]int64)
 	for _, r := range results {
-		if r.Source == "" {
-			continue // unprocessed slot (e.g., context cancelled before goroutine ran)
+		if !r.size {
+			continue // mapping-only inspection; sizing uses the archive or skips the local cache
 		}
-		if r.Error != "" {
-			report.Errors = append(report.Errors, v2alpha1.SizeReportError{
-				Image: r.Source,
-				Error: r.Error,
-			})
+		err := r.Error
+		if err == nil {
+			err = r.SizeError
+		}
+		if err != nil {
+			report.Errors = append(report.Errors, fmt.Errorf("%s: %w", r.Source, err))
 			continue
 		}
 		report.ImageCount++
 		for _, blob := range r.Blobs {
-			blobSeen[blob.Digest] = blob.Size
+			blobSeen[blob.Digest.String()] = blob.Size
 		}
 	}
 	report.TotalSize = sumMapValues(blobSeen)
@@ -343,24 +338,21 @@ func computeSizeReport(results []v2alpha1.ImageSizeResult) v2alpha1.DryRunSizeRe
 }
 
 // logSizeReport prints the size estimation summary, including any images that failed sizing.
-func (o *ExecutorSchema) logSizeReport(report v2alpha1.DryRunSizeReport) {
+func (o *ExecutorSchema) logSizeReport(report dryRunSizeReport) {
 	o.Log.Info("📊 Dry-run size estimate:")
 	switch {
 	case report.SizeUnavailable:
 		o.Log.Info("Total estimated size: unavailable")
 	case len(report.Errors) > 0:
-		// Partial total is a lower bound — do not present it as a complete estimate.
-		totalHuman := units.HumanSize(float64(report.TotalSize))
-		o.Log.Info("Total estimated size: %s (%d bytes; incomplete)", totalHuman, report.TotalSize)
+		o.Log.Info("Total estimated size: %s (%d bytes; incomplete)", units.HumanSize(float64(report.TotalSize)), report.TotalSize)
 	default:
-		totalHuman := units.HumanSize(float64(report.TotalSize))
-		o.Log.Info("Total estimated size: %s (%d bytes)", totalHuman, report.TotalSize)
+		o.Log.Info("Total estimated size: %s (%d bytes)", units.HumanSize(float64(report.TotalSize)), report.TotalSize)
 	}
 	o.Log.Info("Images: %d", report.ImageCount)
 	if len(report.Errors) > 0 {
 		o.Log.Warn("%d image(s) could not be sized:", len(report.Errors))
 		for _, e := range report.Errors {
-			o.Log.Warn("  %s: %s", e.Image, e.Error)
+			o.Log.Warn("  %v", e)
 		}
 	}
 }
@@ -379,56 +371,18 @@ func isLocalCacheSource(source, localStorageFQDN string) bool {
 	return spec.Domain == localStorageFQDN
 }
 
-// filterLocalCacheSourceImages drops images sourced from the local cache
-// (e.g. rebuilt catalogs in m2m) so dry-run does not try to size them remotely.
-func filterLocalCacheSourceImages(images []v2alpha1.CopyImageSchema, localStorageFQDN string) []v2alpha1.CopyImageSchema {
-	if localStorageFQDN == "" {
-		return images
-	}
-	filtered := make([]v2alpha1.CopyImageSchema, 0, len(images))
-	for _, img := range images {
-		if !isLocalCacheSource(img.Source, localStorageFQDN) {
-			filtered = append(filtered, img)
-		}
-	}
-	return filtered
-}
-
-// dedupeImagesBySource keeps one sizing row per Source so m2m dual catalog copies
-// (cache dest + registry dest) are not fetched/counted twice.
-func dedupeImagesBySource(images []v2alpha1.CopyImageSchema) []v2alpha1.CopyImageSchema {
-	seen := make(map[string]int, len(images))
-	out := make([]v2alpha1.CopyImageSchema, 0, len(images))
-	for _, img := range images {
-		if idx, ok := seen[img.Source]; ok {
-			if out[idx].Origin == "" && img.Origin != "" {
-				out[idx].Origin = img.Origin
-			}
-			if img.Type.IsOperatorCatalog() {
-				out[idx].Type = img.Type
-			}
-			continue
-		}
-		seen[img.Source] = len(out)
-		out = append(out, img)
-	}
-	return out
-}
-
 // adjustSizeForWorkflow adjusts the raw unique blob size based on workflow:
 //
 //   - m2m: image content + local cache (operator catalogs only)
 //   - m2d: image content × 2 (cache + tarball coexist on disk)
-//   - d2m: exact tarball size (all Sources are local-cache-based and filtered
-//     out, so blob-level estimation is not done; the tarball is measured from disk)
-func adjustSizeForWorkflow(rawSize int64, mode string, results []v2alpha1.ImageSizeResult, images []v2alpha1.CopyImageSchema, tarballSize int64) int64 {
+//
+// Disk-to-mirror is handled separately by measuring archive files on disk.
+func adjustSizeForWorkflow(rawSize int64, mode string, results []dryRunImageInspection, images []v2alpha1.CopyImageSchema) int64 {
 	switch mode {
 	case mirror.MirrorToMirror:
 		return saturatingAdd(rawSize, computeOperatorCatalogCacheSize(results, images))
 	case mirror.MirrorToDisk:
 		return saturatingAdd(rawSize, rawSize)
-	case mirror.DiskToMirror:
-		return tarballSize
 	default:
 		return rawSize
 	}
@@ -437,25 +391,20 @@ func adjustSizeForWorkflow(rawSize int64, mode string, results []v2alpha1.ImageS
 // computeOperatorCatalogCacheSize returns the deduplicated blob size of operator catalog images only.
 // In m2m, catalogs are cached locally for the rebuild/delete workflow in addition to being pushed to the target registry.
 // Matching is done by Source key to avoid fragile index-based correlation.
-func computeOperatorCatalogCacheSize(results []v2alpha1.ImageSizeResult, images []v2alpha1.CopyImageSchema) int64 {
+func computeOperatorCatalogCacheSize(results []dryRunImageInspection, images []v2alpha1.CopyImageSchema) int64 {
 	catalogSources := make(map[string]bool, len(images))
 	for _, img := range images {
 		if img.Type.IsOperatorCatalog() {
 			catalogSources[img.Source] = true
 		}
 	}
-	blobSeen := make(map[string]int64)
+	var catalogs []dryRunImageInspection
 	for _, r := range results {
-		if r.Source == "" || r.Error != "" {
-			continue
-		}
 		if catalogSources[r.Source] {
-			for _, blob := range r.Blobs {
-				blobSeen[blob.Digest] = blob.Size
-			}
+			catalogs = append(catalogs, r)
 		}
 	}
-	return sumMapValues(blobSeen)
+	return computeSizeReport(catalogs).TotalSize
 }
 
 func sumMapValues(m map[string]int64) int64 {
@@ -468,12 +417,7 @@ func sumMapValues(m map[string]int64) int64 {
 
 // saturatingAdd adds sizes without wrapping past MaxInt64.
 func saturatingAdd(a, b int64) int64 {
-	if a < 0 {
-		a = 0
-	}
-	if b < 0 {
-		b = 0
-	}
+	a, b = max(a, 0), max(b, 0)
 	if a > math.MaxInt64-b {
 		return math.MaxInt64
 	}

@@ -16,6 +16,7 @@ import (
 
 	"github.com/openshift/oc-mirror/v2/internal/pkg/api/v2alpha1"
 	clog "github.com/openshift/oc-mirror/v2/internal/pkg/log"
+	"github.com/openshift/oc-mirror/v2/internal/pkg/manifest"
 	mirror "github.com/openshift/oc-mirror/v2/internal/pkg/mirror"
 )
 
@@ -714,12 +715,8 @@ func (o mockManifest) ImageManifest(ctx context.Context, sourceCtx *types.System
 	return nil, "", nil
 }
 
-func (o mockManifest) GetManifestListDigests(ctx context.Context, sourceCtx *types.SystemContext, source string) ([]string, error) {
-	return nil, nil
-}
-
-func (o mockManifest) ImageBlobSizes(ctx context.Context, sourceCtx *types.SystemContext, imgRef string, platformFilters []v2alpha1.InstancePlatformFilter) ([]v2alpha1.BlobSizeInfo, error) {
-	return nil, nil
+func (o mockManifest) InspectImage(ctx context.Context, sourceCtx *types.SystemContext, imgRef string, platformFilters []v2alpha1.InstancePlatformFilter, includeBlobSizes bool) (manifest.ImageInspection, error) {
+	return manifest.ImageInspection{}, nil
 }
 
 func (o mockManifest) GetOCIImageFromIndex(dir string) (gcrv1.Image, error) { //nolint:ireturn // as expected by go-containerregistry

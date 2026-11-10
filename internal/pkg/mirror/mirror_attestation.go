@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/opencontainers/go-digest"
+	cimage "go.podman.io/image/v5/image"
 	"go.podman.io/image/v5/manifest"
 	"go.podman.io/image/v5/types"
 )
@@ -43,7 +44,7 @@ func filterAttestationInstances(ctx context.Context, srcRef types.ImageReference
 		}
 	}()
 
-	manifestBytes, mimeType, err := src.GetManifest(ctx, nil)
+	manifestBytes, mimeType, err := cimage.UnparsedInstance(src, nil).Manifest(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("reading manifest for attestation check: %w", err)
 	}

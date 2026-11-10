@@ -22,6 +22,7 @@ import (
 	"github.com/openshift/oc-mirror/v2/internal/pkg/consts"
 	"github.com/openshift/oc-mirror/v2/internal/pkg/folder"
 	clog "github.com/openshift/oc-mirror/v2/internal/pkg/log"
+	"github.com/openshift/oc-mirror/v2/internal/pkg/manifest"
 	"github.com/openshift/oc-mirror/v2/internal/pkg/mirror"
 )
 
@@ -769,12 +770,8 @@ func (o MockManifest) ImageManifest(ctx context.Context, sourceCtx *types.System
 	return nil, "", nil
 }
 
-func (o MockManifest) GetManifestListDigests(ctx context.Context, sourceCtx *types.SystemContext, source string) ([]string, error) {
-	return nil, nil
-}
-
-func (o MockManifest) ImageBlobSizes(ctx context.Context, sourceCtx *types.SystemContext, imgRef string, platformFilters []v2alpha1.InstancePlatformFilter) ([]v2alpha1.BlobSizeInfo, error) {
-	return nil, nil
+func (o MockManifest) InspectImage(ctx context.Context, sourceCtx *types.SystemContext, imgRef string, platformFilters []v2alpha1.InstancePlatformFilter, includeBlobSizes bool) (manifest.ImageInspection, error) {
+	return manifest.ImageInspection{}, nil
 }
 
 func (o MockCincinnati) GetReleaseReferenceImages(ctx context.Context) ([]v2alpha1.CopyImageSchema, error) {
@@ -850,12 +847,8 @@ func (o *ManifestMock) ImageManifest(ctx context.Context, sourceCtx *types.Syste
 	return nil, "", nil
 }
 
-func (o *ManifestMock) GetManifestListDigests(ctx context.Context, sourceCtx *types.SystemContext, source string) ([]string, error) {
-	return nil, nil
-}
-
-func (o *ManifestMock) ImageBlobSizes(ctx context.Context, sourceCtx *types.SystemContext, imgRef string, platformFilters []v2alpha1.InstancePlatformFilter) ([]v2alpha1.BlobSizeInfo, error) {
-	return nil, nil
+func (o *ManifestMock) InspectImage(ctx context.Context, sourceCtx *types.SystemContext, imgRef string, platformFilters []v2alpha1.InstancePlatformFilter, includeBlobSizes bool) (manifest.ImageInspection, error) {
+	return manifest.ImageInspection{}, nil
 }
 
 // TestRequestedKubeVirtArchKeys verifies that the architecture-key resolution

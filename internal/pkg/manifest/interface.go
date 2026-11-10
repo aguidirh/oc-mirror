@@ -11,6 +11,15 @@ import (
 	"github.com/openshift/oc-mirror/v2/internal/pkg/api/v2alpha1"
 )
 
+// ImageInspection contains mapping and sizing metadata from a single inspection.
+// ManifestListDigests includes all top-level instances, even those excluded from
+// sizing. SizeError does not invalidate those mapping digests.
+type ImageInspection struct {
+	ManifestListDigests []string
+	Blobs               []types.BlobInfo
+	SizeError           error
+}
+
 type ManifestInterface interface {
 	GetOCIImageIndex(file string) (*specv1.Index, error)
 	GetOCIImageManifest(file string) (*specv1.Manifest, error)
@@ -21,9 +30,8 @@ type ManifestInterface interface {
 	GetOperatorConfig(file string) (*v2alpha1.OperatorConfigSchema, error)
 	ImageDigest(ctx context.Context, sourceCtx *types.SystemContext, imgRef string) (string, error)
 	ImageManifest(ctx context.Context, sourceCtx *types.SystemContext, imgRef string, instanceDigest *digest.Digest) ([]byte, string, error)
-	GetManifestListDigests(ctx context.Context, sourceCtx *types.SystemContext, source string) ([]string, error)
-	// ImageBlobSizes fetches the manifest for imgRef and returns the digest+size
-	// of every blob (layers + config). For manifest lists, sub-manifests are resolved
-	// and filtered by platformFilters.
-	ImageBlobSizes(ctx context.Context, sourceCtx *types.SystemContext, imgRef string, platformFilters []v2alpha1.InstancePlatformFilter) ([]v2alpha1.BlobSizeInfo, error)
+	// InspectImage retrieves mapping digests and optionally sizes selected blobs.
+	// The returned error is for top-level inspection; sizing errors are recorded
+	// separately in ImageInspection so valid mappings survive child failures.
+	InspectImage(ctx context.Context, sourceCtx *types.SystemContext, imgRef string, platformFilters []v2alpha1.InstancePlatformFilter, includeBlobSizes bool) (ImageInspection, error)
 }
